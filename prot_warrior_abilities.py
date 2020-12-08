@@ -96,37 +96,41 @@ class warrior:
     # these are the prot warrior abilities that do damage
     def shield_slam(self):
         
-        return 0.851*warrior.get_ability_power(self)*1.20*(1 + warrior.get_vers_percent(self)/100)
+        return round(0.851*warrior.get_ability_power(self)*1.20*(1 + warrior.get_vers_percent(self)/100))
     
     def revenge(self):
         
-        return 0.63*warrior.get_ability_power(self)*(1 + warrior.get_vers_percent(self)/100)
+        return round(0.63*warrior.get_ability_power(self)*(1 + warrior.get_vers_percent(self)/100))
     
     def thunder_clap(self):
         
-        return 0.42*warrior.get_ability_power(self)*(1 + warrior.get_vers_percent(self)/100)
+        return round(0.42*warrior.get_ability_power(self)*(1 + warrior.get_vers_percent(self)/100))
     
     def condemn_damage(self,rage):
         
-        return 1.035*warrior.get_ability_power(self)*(1 + warrior.get_vers_percent(self)/100)*(min(20,rage)/20 )
+        return round(1.035*warrior.get_ability_power(self)*(1 + warrior.get_vers_percent(self)/100)*(min(20,rage)/20 ))
     
     def condemn_shield(self,rage):
         
-        return 0.6*warrior.get_ability_power(self)*(1 + warrior.get_vers_percent(self)/100)*(min(20,rage)/20 )
+        return round(0.6*warrior.get_ability_power(self)*(1 + warrior.get_vers_percent(self)/100)*(min(20,rage)/20 ))
     
     def devastator(self):
         
-        return 0.221*warrior.get_ability_power(self)*(1 + warrior.get_vers_percent(self)/100)
+        return round(0.221*warrior.get_ability_power(self)*(1 + warrior.get_vers_percent(self)/100))
     
     # ravager will always tick 6 times regardless of haste level
     # we will just add a counter to show this in the actual sim
     def ravager_tick(self):
         
-        return 0.424*warrior.get_ability_power(self)*(1 + warrior.get_vers_percent(self)/100)
+        return round(0.424*warrior.get_ability_power(self)*(1 + warrior.get_vers_percent(self)/100))
     
     def dragon_roar(self):
         
-        return 1.7*warrior.get_ability_power(self)*(1 + warrior.get_vers_percent(self)/100)
+        return round(1.7*warrior.get_ability_power(self)*(1 + warrior.get_vers_percent(self)/100))
+    
+    def ignore_pain(self):
+        
+        return round(3.5*warrior.get_ability_power(self)*(1 + warrior.get_vers_percent(self)/100))
     
     
 if __name__ == '__main__':
