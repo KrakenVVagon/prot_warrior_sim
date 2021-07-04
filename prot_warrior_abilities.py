@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sun Dec  6 02:09:45 2020
-
-@author: Andrew
+@author: Xorku-Hyjal / KrakenWagon / Andrew Younger
 
 Contains all the abilities and the stat percentage calculations for a prot warrior.
 Resources and cooldowns are calculated in the sim script itself
 
-Current as of PRE-NATHRIA 9.0.2 (2020-12-07)
+Current as of PRE-CHAINS 9.0.2 (2021-07-04)
 """
+from dataclasses import dataclass
 
 def rating_to_percent(rating,scale_factor):
     # check if the rating by itself is higher under the first breakpoint
@@ -49,7 +48,8 @@ def rating_to_percent(rating,scale_factor):
     else:
         # 126 is the max percent value of secondaries you can have in SL
         return 126
-    
+
+@dataclass(init=False)
 class warrior:
     
     def __init__(self,stats=None):
@@ -60,89 +60,73 @@ class warrior:
             self.vers = stats['vers']
             self.strength = stats['strength']
             self.wdps = stats['wdps']
-            self.spec=stats['spec']
+            self.rage = stats['rage']
         else:
-            print('Bad initialization')
+            raise Exception('Bad initialization - no stats given')
+        
+        self.haste_perc = rating_to_percent(self.haste,33)/100
+        self.crit_perc = (5 + rating_to_percent(self.crit,35))/100
+        self.mastery_perc = (8 + rating_to_percent(self.mastery,35))/100
+        self.vers_perc = rating_to_percent(self.vers,40)/100
+
+@dataclass(init=False)
+class protection(warrior):
+    
+    def __init__(self,stats=None):
+        if stats is None:
+            raise Exception('Bad initialization - no stats given')
+        else:
+            warrior.__init__(self,stats=stats)
             
-    def get_haste_percent(self,scale_factor=33):
-        return rating_to_percent(self.haste,scale_factor)
+        patch_multiplier = 1.10 # 10% buff to abilities as a hidden aura in 9.0.5
+        
+        execute_rage = max(20,self.rage)
+        execute_rage = min(40,execute_rage)
+            
+        self.attack_power = round(self.strength * (1 + self.mastery_perc) * 1.05)
+        self.ability_power = round(self.wdps * 6 * (1 + self.mastery_perc) * 1.05) +  self.attack_power
+        
+        ability_mult = self.ability_power * (1 + self.vers_perc) * patch_multiplier
+        
+        self.shield_slam = round(1.2 * 0.851 * ability_mult)
+        self.revenge = round(0.63 * ability_mult)
+        self.thunderclap = round(0.462 * ability_mult)
+        
+        self.condemn_damage = round(1.035 * ability_mult * (execute_rage/20) )
+        # shield does not have patch multiplier
+        self.condemn_shield = round(0.6 * self.ability_power * (1 + self.vers_perc) * (execute_rage/20))
+        
+        # should always tick 6 times
+        self.ravager_tick = round(0.424 * ability_mult)
+        self.dragon_roar = round(1.7 * ability_mult)
+        self.devastator = round(0.221 * ability_mult)
+        
+        self.ignore_pain = round(3.5 * self.ability_power * (1 + self.vers_perc))
+
+@dataclass(init=False)
+class fury(warrior):
     
-    def get_crit_percent(self,scale_factor=35):
-        return rating_to_percent(self.crit,scale_factor)
-    
-    def get_mastery_percent(self,scale_factor=35):
-#        mastery_scales = {'prot':23.33,'arms':31.82,'fury':24}
-        return 8 + rating_to_percent(self.mastery,scale_factor)
-    
-    def get_vers_percent(self,scale_factor=40):
-        return rating_to_percent(self.vers,scale_factor)
-    
-    def get_attack_power(self):
-        if self.spec=='prot':
-            return self.strength * ( 1 + (warrior.get_mastery_percent(self))/100 ) * 1.05
+    def __init__(self,stats=None):
+        if stats is None:
+            raise Exception('Bad initialization - no stats given')
         else:
-            return self.strength * 1.05 #battle shout
-        
-    def get_ability_power(self):
-        t_power = self.wdps*6
-        
-        if self.spec=='prot':
-            t_power *= ( 1 + (warrior.get_mastery_percent(self))/100 )
-        
-        t_power *= 1.05 # add in battleshout
-        
-        return t_power + warrior.get_attack_power(self)
-    
-    # these are the prot warrior abilities that do damage
-    def shield_slam(self):
-        
-        return round(0.851*warrior.get_ability_power(self)*1.20*(1 + warrior.get_vers_percent(self)/100))
-    
-    def revenge(self):
-        
-        return round(0.63*warrior.get_ability_power(self)*(1 + warrior.get_vers_percent(self)/100))
-    
-    def thunder_clap(self):
-        
-        return round(0.42*warrior.get_ability_power(self)*(1 + warrior.get_vers_percent(self)/100))
-    
-    def condemn_damage(self,rage):
-        
-        return round(1.035*warrior.get_ability_power(self)*(1 + warrior.get_vers_percent(self)/100)*(min(20,rage)/20 ))
-    
-    def condemn_shield(self,rage):
-        
-        return round(0.6*warrior.get_ability_power(self)*(1 + warrior.get_vers_percent(self)/100)*(min(20,rage)/20 ))
-    
-    def devastator(self):
-        
-        return round(0.221*warrior.get_ability_power(self)*(1 + warrior.get_vers_percent(self)/100))
-    
-    # ravager will always tick 6 times regardless of haste level
-    # we will just add a counter to show this in the actual sim
-    def ravager_tick(self):
-        
-        return round(0.424*warrior.get_ability_power(self)*(1 + warrior.get_vers_percent(self)/100))
-    
-    def dragon_roar(self):
-        
-        return round(1.7*warrior.get_ability_power(self)*(1 + warrior.get_vers_percent(self)/100))
-    
-    def ignore_pain(self):
-        
-        return round(3.5*warrior.get_ability_power(self)*(1 + warrior.get_vers_percent(self)/100))
-    
-    
+            warrior.__init__(self,stats=stats)
+            
+        self.attack_power = self.strength * 1.05
+        self.ability_power = self.attack_power + self.wdps * 6 * 1.05
+      
 if __name__ == '__main__':
     
     stats = {
-        'haste':368,
-        'crit':201,
-        'mastery':343,
-        'vers':385,
-        'strength':992,
-        'wdps':31,
-        'spec':'prot'
+        'haste':555,
+        'crit':423,
+        'mastery':190,
+        'vers':667,
+        'strength':1293,
+        'wdps':46,
+        'rage': 20
         }
     
-    xorku = warrior(stats)
+    xorku = protection(stats)
+    
+    print(xorku.shield_slam)
